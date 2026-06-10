@@ -1,0 +1,1157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>ResumeAI — Build Your Resume with AI</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
+<style>
+  /* ─── TOKENS ─────────────────────────────────────────── */
+  :root {
+    --ink:       #0f1117;
+    --paper:     #f7f6f2;
+    --mid:       #e8e5de;
+    --muted:     #888580;
+    --accent:    #2350ff;
+    --accent-lt: #edf0ff;
+    --good:      #18a04b;
+    --warn:      #e06c2a;
+    --white:     #ffffff;
+
+    --f-display: 'DM Serif Display', Georgia, serif;
+    --f-body:    'Inter', system-ui, sans-serif;
+    --f-mono:    'JetBrains Mono', monospace;
+
+    --r-sm: 6px;
+    --r-md: 12px;
+    --r-lg: 20px;
+
+    --shadow: 0 2px 16px rgba(15,17,23,.08);
+    --shadow-lg: 0 8px 40px rgba(15,17,23,.14);
+  }
+
+  /* ─── RESET ──────────────────────────────────────────── */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body {
+    font-family: var(--f-body);
+    background: var(--paper);
+    color: var(--ink);
+    font-size: 15px;
+    line-height: 1.6;
+    min-height: 100vh;
+  }
+  a { color: var(--accent); text-decoration: none; }
+  button { cursor: pointer; font-family: inherit; }
+  input, textarea, select {
+    font-family: inherit;
+    font-size: 14px;
+    border: 1.5px solid var(--mid);
+    border-radius: var(--r-sm);
+    padding: 9px 12px;
+    width: 100%;
+    background: var(--white);
+    color: var(--ink);
+    transition: border-color .18s, box-shadow .18s;
+    outline: none;
+  }
+  input:focus, textarea:focus, select:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(35,80,255,.12);
+  }
+  textarea { resize: vertical; min-height: 80px; }
+  label { font-size: 12px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; color: var(--muted); display: block; margin-bottom: 5px; }
+
+  /* ─── TOP NAV ────────────────────────────────────────── */
+  nav {
+    position: sticky; top: 0; z-index: 100;
+    background: rgba(247,246,242,.92);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--mid);
+    padding: 0 32px;
+    display: flex; align-items: center; justify-content: space-between;
+    height: 60px;
+  }
+  .nav-brand {
+    display: flex; align-items: center; gap: 10px;
+    font-family: var(--f-display);
+    font-size: 22px;
+    color: var(--ink);
+  }
+  .nav-brand span {
+    background: var(--accent);
+    color: var(--white);
+    font-size: 11px;
+    font-family: var(--f-body);
+    font-weight: 600;
+    padding: 2px 7px;
+    border-radius: 20px;
+    letter-spacing: .04em;
+  }
+  .nav-actions { display: flex; gap: 10px; }
+
+  /* ─── BUTTONS ────────────────────────────────────────── */
+  .btn {
+    display: inline-flex; align-items: center; gap: 7px;
+    font-size: 13px; font-weight: 600;
+    padding: 9px 18px; border-radius: var(--r-sm);
+    border: 1.5px solid transparent;
+    transition: all .18s;
+    white-space: nowrap;
+  }
+  .btn-primary { background: var(--accent); color: var(--white); }
+  .btn-primary:hover { background: #1a3de0; }
+  .btn-outline { background: transparent; color: var(--ink); border-color: var(--mid); }
+  .btn-outline:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-lt); }
+  .btn-ghost { background: transparent; color: var(--muted); border-color: transparent; }
+  .btn-ghost:hover { color: var(--accent); background: var(--accent-lt); }
+  .btn-green { background: var(--good); color: var(--white); }
+  .btn-green:hover { background: #138f41; }
+  .btn-lg { padding: 13px 26px; font-size: 15px; border-radius: var(--r-md); }
+
+  /* ─── HERO ───────────────────────────────────────────── */
+  .hero {
+    text-align: center;
+    padding: 72px 24px 56px;
+    max-width: 740px;
+    margin: 0 auto;
+  }
+  .hero-eyebrow {
+    display: inline-flex; align-items: center; gap: 8px;
+    font-size: 12px; font-weight: 600; letter-spacing: .08em;
+    text-transform: uppercase; color: var(--accent);
+    background: var(--accent-lt);
+    padding: 5px 14px; border-radius: 20px;
+    margin-bottom: 24px;
+  }
+  .hero h1 {
+    font-family: var(--f-display);
+    font-size: clamp(36px, 6vw, 58px);
+    line-height: 1.1;
+    letter-spacing: -.02em;
+    margin-bottom: 18px;
+  }
+  .hero h1 em { font-style: italic; color: var(--accent); }
+  .hero p { font-size: 17px; color: var(--muted); max-width: 500px; margin: 0 auto 32px; }
+  .hero-cta { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+
+  /* ─── MAIN LAYOUT ────────────────────────────────────── */
+  .app-shell {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0;
+    max-width: 1360px;
+    margin: 0 auto;
+    min-height: calc(100vh - 60px);
+  }
+  @media (max-width: 900px) {
+    .app-shell { grid-template-columns: 1fr; }
+    .preview-panel { display: none; }
+    .preview-panel.show-mobile { display: block; }
+  }
+
+  /* ─── EDITOR PANEL ───────────────────────────────────── */
+  .editor-panel {
+    padding: 32px;
+    border-right: 1px solid var(--mid);
+    overflow-y: auto;
+    max-height: calc(100vh - 60px);
+  }
+
+  .panel-title {
+    font-size: 12px; font-weight: 700; letter-spacing: .1em;
+    text-transform: uppercase; color: var(--muted);
+    margin-bottom: 20px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .panel-title::after {
+    content: ''; flex: 1; height: 1px; background: var(--mid);
+  }
+
+  /* Tabs */
+  .tabs {
+    display: flex; gap: 4px;
+    background: var(--mid); border-radius: var(--r-sm);
+    padding: 4px; margin-bottom: 28px;
+  }
+  .tab {
+    flex: 1; text-align: center; padding: 8px 6px;
+    font-size: 12px; font-weight: 600;
+    border-radius: 4px; border: none;
+    background: transparent; color: var(--muted);
+    transition: all .18s;
+  }
+  .tab.active { background: var(--white); color: var(--ink); box-shadow: var(--shadow); }
+
+  /* Field groups */
+  .field-group { margin-bottom: 20px; }
+  .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .field-row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
+
+  /* Section cards */
+  .section-card {
+    background: var(--white);
+    border: 1.5px solid var(--mid);
+    border-radius: var(--r-md);
+    margin-bottom: 14px;
+    overflow: hidden;
+    transition: border-color .18s;
+  }
+  .section-card:hover { border-color: #c8c4bc; }
+  .section-card-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 14px 18px;
+    cursor: pointer;
+    user-select: none;
+  }
+  .section-card-header h4 { font-size: 14px; font-weight: 600; }
+  .section-card-header small { font-size: 12px; color: var(--muted); }
+  .section-card-body { padding: 0 18px 18px; border-top: 1px solid var(--mid); }
+  .section-card-body.collapsed { display: none; }
+  .chevron { transition: transform .2s; font-size: 12px; color: var(--muted); }
+  .chevron.open { transform: rotate(180deg); }
+
+  .add-btn {
+    display: flex; align-items: center; gap: 6px;
+    font-size: 13px; font-weight: 600; color: var(--accent);
+    background: var(--accent-lt); border: none;
+    padding: 9px 16px; border-radius: var(--r-sm);
+    margin-top: 8px; transition: background .18s;
+  }
+  .add-btn:hover { background: #dce3ff; }
+  .remove-btn {
+    font-size: 11px; color: var(--warn); background: none; border: none;
+    padding: 4px 8px; border-radius: 4px; transition: background .18s;
+  }
+  .remove-btn:hover { background: #fdf0e8; }
+
+  /* Skills chips */
+  .skills-input-row { display: flex; gap: 8px; }
+  .skills-input-row input { flex: 1; }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+  .chip {
+    display: inline-flex; align-items: center; gap: 5px;
+    background: var(--accent-lt); color: var(--accent);
+    font-size: 12px; font-weight: 600;
+    padding: 4px 10px; border-radius: 20px;
+  }
+  .chip button { background: none; border: none; color: var(--accent); font-size: 14px; line-height: 1; padding: 0; }
+
+  /* AI assist */
+  .ai-bar {
+    background: linear-gradient(135deg, #edf0ff 0%, #f3f0ff 100%);
+    border: 1.5px solid #c5cfff;
+    border-radius: var(--r-md);
+    padding: 16px 18px;
+    margin-bottom: 20px;
+    display: flex; align-items: flex-start; gap: 12px;
+  }
+  .ai-bar-icon {
+    width: 32px; height: 32px; border-radius: 8px;
+    background: var(--accent); color: var(--white);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px; flex-shrink: 0;
+  }
+  .ai-bar-content { flex: 1; }
+  .ai-bar-content p { font-size: 13px; color: #3a3a5c; margin-bottom: 10px; }
+  .ai-bar-content textarea { min-height: 60px; font-size: 13px; }
+  .ai-bar-actions { display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap; }
+  .ai-chip {
+    font-size: 11px; font-weight: 600; padding: 5px 12px;
+    border-radius: 20px; background: var(--white);
+    border: 1.5px solid #c5cfff; color: var(--accent);
+    cursor: pointer; transition: all .15s;
+  }
+  .ai-chip:hover { background: var(--accent); color: var(--white); border-color: var(--accent); }
+
+  /* Loading spinner */
+  .spinner {
+    display: inline-block; width: 14px; height: 14px;
+    border: 2px solid rgba(255,255,255,.4);
+    border-top-color: var(--white);
+    border-radius: 50%; animation: spin .7s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ─── PREVIEW PANEL ──────────────────────────────────── */
+  .preview-panel {
+    background: #d6d3cb;
+    padding: 32px;
+    overflow-y: auto;
+    max-height: calc(100vh - 60px);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0;
+  }
+  .preview-toolbar {
+    display: flex; gap: 10px; align-items: center;
+    width: 100%; max-width: 680px;
+    margin-bottom: 20px; flex-wrap: wrap;
+  }
+  .preview-toolbar-label {
+    font-size: 12px; font-weight: 700; letter-spacing: .08em;
+    text-transform: uppercase; color: #6b6861; flex: 1;
+  }
+
+  /* The actual resume paper */
+  #resume-preview {
+    width: 680px;
+    max-width: 100%;
+    background: var(--white);
+    box-shadow: var(--shadow-lg);
+    border-radius: var(--r-sm);
+    overflow: hidden;
+  }
+
+  /* ─── RESUME STYLES ──────────────────────────────────── */
+  .resume-header {
+    padding: 36px 40px 28px;
+    border-bottom: 3px solid var(--ink);
+  }
+  .resume-header .name {
+    font-family: var(--f-display);
+    font-size: 34px;
+    letter-spacing: -.02em;
+    line-height: 1;
+    margin-bottom: 4px;
+  }
+  .resume-header .title {
+    font-size: 14px; font-weight: 500; color: var(--accent);
+    letter-spacing: .04em; margin-bottom: 14px;
+  }
+  .resume-contact {
+    display: flex; flex-wrap: wrap; gap: 14px;
+    font-size: 12px; color: var(--muted);
+    font-family: var(--f-mono);
+  }
+  .resume-contact span { display: flex; align-items: center; gap: 5px; }
+
+  .resume-body { display: grid; grid-template-columns: 1fr 2fr; }
+  .resume-sidebar { background: #f3f2ee; padding: 28px 24px; border-right: 1px solid var(--mid); }
+  .resume-main { padding: 28px 32px; }
+
+  .res-section { margin-bottom: 24px; }
+  .res-section-title {
+    font-family: var(--f-mono);
+    font-size: 10px; font-weight: 700;
+    letter-spacing: .14em; text-transform: uppercase;
+    color: var(--accent);
+    border-bottom: 1.5px solid var(--accent);
+    padding-bottom: 5px;
+    margin-bottom: 14px;
+  }
+
+  .res-entry { margin-bottom: 16px; }
+  .res-entry-top {
+    display: flex; justify-content: space-between; align-items: flex-start; gap: 8px;
+  }
+  .res-entry-top h4 { font-size: 14px; font-weight: 700; }
+  .res-entry-top .res-date {
+    font-size: 11px; color: var(--muted);
+    font-family: var(--f-mono);
+    white-space: nowrap; flex-shrink: 0;
+  }
+  .res-entry-sub {
+    font-size: 12px; color: var(--accent); font-weight: 600; margin-bottom: 5px;
+  }
+  .res-entry-desc { font-size: 12px; color: #444; line-height: 1.55; }
+  .res-entry-desc ul { padding-left: 16px; }
+  .res-entry-desc li { margin-bottom: 3px; }
+
+  .skill-item {
+    margin-bottom: 10px;
+  }
+  .skill-label { font-size: 12px; font-weight: 600; margin-bottom: 4px; }
+  .skill-bar { height: 4px; background: var(--mid); border-radius: 2px; overflow: hidden; }
+  .skill-bar-fill { height: 100%; background: var(--accent); border-radius: 2px; }
+
+  .sidebar-chip {
+    display: inline-block;
+    background: var(--white); border: 1px solid var(--mid);
+    font-size: 11px; font-weight: 600;
+    padding: 3px 9px; border-radius: 20px;
+    margin: 2px 2px 2px 0; color: var(--ink);
+  }
+
+  /* ─── TOASTS ─────────────────────────────────────────── */
+  #toast-container {
+    position: fixed; bottom: 24px; right: 24px;
+    display: flex; flex-direction: column; gap: 8px; z-index: 9999;
+  }
+  .toast {
+    background: var(--ink); color: var(--white);
+    font-size: 13px; font-weight: 500;
+    padding: 12px 18px; border-radius: var(--r-md);
+    box-shadow: var(--shadow-lg);
+    animation: slide-in .25s ease;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .toast.success { background: var(--good); }
+  .toast.error   { background: #c0392b; }
+  @keyframes slide-in { from { transform: translateX(40px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+
+  /* ─── FOOTER ─────────────────────────────────────────── */
+  .template-row {
+    display: flex; gap: 8px; padding: 16px 32px;
+    background: var(--white); border-top: 1px solid var(--mid);
+    overflow-x: auto;
+  }
+  .template-pill {
+    font-size: 12px; font-weight: 600; padding: 6px 14px;
+    border-radius: 20px; border: 1.5px solid var(--mid);
+    background: var(--white); color: var(--muted);
+    cursor: pointer; white-space: nowrap; transition: all .15s;
+  }
+  .template-pill.active, .template-pill:hover {
+    background: var(--accent); color: var(--white); border-color: var(--accent);
+  }
+
+  /* ─── MOBILE TOGGLE ──────────────────────────────────── */
+  .mobile-preview-toggle {
+    display: none;
+    position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
+    z-index: 200;
+  }
+  @media (max-width: 900px) { .mobile-preview-toggle { display: flex; } }
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-brand">
+    ResumeAI <span>✦ AI Powered</span>
+  </div>
+  <div class="nav-actions">
+    <button class="btn btn-outline" onclick="clearAll()">↺ Reset</button>
+    <button class="btn btn-green btn-lg" id="download-btn" onclick="downloadPDF()">
+      ⬇ Download PDF
+    </button>
+  </div>
+</nav>
+
+<!-- MAIN APP -->
+<div class="app-shell">
+
+  <!-- ══════════ EDITOR ══════════ -->
+  <div class="editor-panel">
+
+    <!-- Tabs -->
+    <div class="tabs" id="tab-bar">
+      <button class="tab active" onclick="switchTab('info')">👤 Info</button>
+      <button class="tab" onclick="switchTab('experience')">💼 Work</button>
+      <button class="tab" onclick="switchTab('education')">🎓 Education</button>
+      <button class="tab" onclick="switchTab('skills')">🛠 Skills</button>
+      <button class="tab" onclick="switchTab('ai')">✦ AI</button>
+    </div>
+
+    <!-- ── TAB: INFO ── -->
+    <div id="tab-info">
+      <div class="panel-title">Personal Info</div>
+      <div class="field-group">
+        <div class="field-row">
+          <div><label>First Name</label><input type="text" id="firstName" placeholder="Jane" oninput="renderPreview()" /></div>
+          <div><label>Last Name</label><input type="text" id="lastName" placeholder="Smith" oninput="renderPreview()" /></div>
+        </div>
+      </div>
+      <div class="field-group">
+        <label>Professional Title</label>
+        <input type="text" id="jobTitle" placeholder="Senior Product Designer" oninput="renderPreview()" />
+      </div>
+      <div class="field-group">
+        <label>Professional Summary</label>
+        <textarea id="summary" rows="4" placeholder="Write 2–3 sentences about your experience, strengths, and career goal…" oninput="renderPreview()"></textarea>
+      </div>
+      <div class="field-row">
+        <div class="field-group"><label>Email</label><input type="email" id="email" placeholder="jane@email.com" oninput="renderPreview()" /></div>
+        <div class="field-group"><label>Phone</label><input type="tel" id="phone" placeholder="+1 555 000 0000" oninput="renderPreview()" /></div>
+      </div>
+      <div class="field-row">
+        <div class="field-group"><label>Location</label><input type="text" id="location" placeholder="San Francisco, CA" oninput="renderPreview()" /></div>
+        <div class="field-group"><label>LinkedIn / Website</label><input type="text" id="website" placeholder="linkedin.com/in/jane" oninput="renderPreview()" /></div>
+      </div>
+    </div>
+
+    <!-- ── TAB: EXPERIENCE ── -->
+    <div id="tab-experience" style="display:none">
+      <div class="panel-title">Work Experience</div>
+      <div id="exp-list"></div>
+      <button class="add-btn" onclick="addExperience()">＋ Add Position</button>
+    </div>
+
+    <!-- ── TAB: EDUCATION ── -->
+    <div id="tab-education" style="display:none">
+      <div class="panel-title">Education</div>
+      <div id="edu-list"></div>
+      <button class="add-btn" onclick="addEducation()">＋ Add Education</button>
+    </div>
+
+    <!-- ── TAB: SKILLS ── -->
+    <div id="tab-skills" style="display:none">
+      <div class="panel-title">Skills & Tools</div>
+      <div class="field-group">
+        <label>Add a Skill</label>
+        <div class="skills-input-row">
+          <input type="text" id="skill-input" placeholder="e.g. Figma, Python, Leadership…" onkeydown="skillKeydown(event)" />
+          <button class="btn btn-primary" onclick="addSkill()">Add</button>
+        </div>
+        <div class="chips" id="skills-chips"></div>
+      </div>
+      <div class="field-group">
+        <label>Languages</label>
+        <div class="skills-input-row">
+          <input type="text" id="lang-input" placeholder="e.g. English (Fluent), Spanish (Intermediate)" onkeydown="langKeydown(event)" />
+          <button class="btn btn-outline" onclick="addLanguage()">Add</button>
+        </div>
+        <div class="chips" id="lang-chips"></div>
+      </div>
+      <div class="field-group">
+        <label>Certifications</label>
+        <textarea id="certs" rows="3" placeholder="AWS Solutions Architect – Associate (2024)&#10;Google UX Design Certificate (2023)" oninput="renderPreview()"></textarea>
+      </div>
+    </div>
+
+    <!-- ── TAB: AI ── -->
+    <div id="tab-ai" style="display:none">
+      <div class="panel-title">AI Assistant</div>
+      <div class="ai-bar">
+        <div class="ai-bar-icon">✦</div>
+        <div class="ai-bar-content">
+          <p>Tell the AI what to write or improve. It will generate content directly into your resume.</p>
+          <textarea id="ai-prompt" placeholder="e.g. Write a professional summary for a software engineer with 5 years React experience…"></textarea>
+          <div class="ai-bar-actions">
+            <button class="ai-chip" onclick="setAIPrompt('Write a compelling professional summary for my role')">Write summary</button>
+            <button class="ai-chip" onclick="setAIPrompt('Improve my work experience bullet points to be more impactful and results-focused')">Improve bullets</button>
+            <button class="ai-chip" onclick="setAIPrompt('Suggest 10 relevant skills for a ' + (document.getElementById('jobTitle').value || 'professional') + ' resume')">Suggest skills</button>
+            <button class="ai-chip" onclick="setAIPrompt('Rewrite my summary to be more concise and ATS-friendly')">Make ATS-friendly</button>
+          </div>
+          <div style="margin-top:12px; display:flex; gap:8px; align-items:center;">
+            <button class="btn btn-primary" id="ai-btn" onclick="runAI()">✦ Generate</button>
+            <span id="ai-status" style="font-size:12px;color:var(--muted);"></span>
+          </div>
+        </div>
+      </div>
+      <div id="ai-output" style="display:none">
+        <div class="panel-title">AI Response</div>
+        <div id="ai-output-text" style="background:var(--white);border:1.5px solid var(--mid);border-radius:var(--r-md);padding:18px;font-size:13px;line-height:1.7;white-space:pre-wrap;max-height:340px;overflow-y:auto;"></div>
+        <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;">
+          <button class="btn btn-primary" onclick="applyAIToSummary()">Apply as Summary</button>
+          <button class="btn btn-outline" onclick="copyAIText()">Copy Text</button>
+          <button class="btn btn-ghost" onclick="document.getElementById('ai-output').style.display='none'">Dismiss</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════ PREVIEW ══════════ -->
+  <div class="preview-panel" id="preview-panel">
+    <div class="preview-toolbar">
+      <span class="preview-toolbar-label">Live Preview</span>
+      <select id="color-scheme" onchange="applyColorScheme()" style="width:auto;font-size:12px;padding:6px 10px;">
+        <option value="blue">Blueprint (Blue)</option>
+        <option value="forest">Forest (Green)</option>
+        <option value="slate">Slate (Grey)</option>
+        <option value="rose">Rose (Pink)</option>
+        <option value="ink">Monochrome</option>
+      </select>
+      <button class="btn btn-green" onclick="downloadPDF()">⬇ PDF</button>
+    </div>
+
+    <div id="resume-preview">
+      <!-- Populated by JS -->
+    </div>
+  </div>
+</div>
+
+<!-- Template strip -->
+<div class="template-row">
+  <span style="font-size:12px;font-weight:700;color:var(--muted);padding:6px 0;white-space:nowrap;">Layout:</span>
+  <button class="template-pill active" onclick="setLayout('split'   ,this)">Split Sidebar</button>
+  <button class="template-pill"        onclick="setLayout('classic' ,this)">Classic</button>
+  <button class="template-pill"        onclick="setLayout('minimal' ,this)">Minimal</button>
+  <button class="template-pill"        onclick="setLayout('modern'  ,this)">Modern</button>
+</div>
+
+<!-- Toasts -->
+<div id="toast-container"></div>
+
+<!-- Mobile toggle -->
+<button class="btn btn-primary mobile-preview-toggle" onclick="toggleMobilePreview()">👁 Toggle Preview</button>
+
+<script>
+/* ═══════════════════════════════════════════════════
+   DATA MODEL
+═══════════════════════════════════════════════════ */
+let data = {
+  firstName:'', lastName:'', jobTitle:'', summary:'',
+  email:'', phone:'', location:'', website:'',
+  experience:[], education:[], skills:[], languages:[],
+  certs:'', layout:'split', accentColor:'#2350ff'
+};
+
+let expCount = 0, eduCount = 0;
+let colorSchemes = {
+  blue:   '#2350ff',
+  forest: '#1a7a4a',
+  slate:  '#4a5568',
+  rose:   '#c0406b',
+  ink:    '#0f1117'
+};
+
+/* ═══════════════════════════════════════════════════
+   TABS
+═══════════════════════════════════════════════════ */
+function switchTab(name) {
+  ['info','experience','education','skills','ai'].forEach(t => {
+    document.getElementById('tab-'+t).style.display = (t===name)?'block':'none';
+  });
+  document.querySelectorAll('.tab').forEach((b,i) => {
+    b.classList.toggle('active', ['info','experience','education','skills','ai'][i]===name);
+  });
+}
+
+/* ═══════════════════════════════════════════════════
+   EXPERIENCE
+═══════════════════════════════════════════════════ */
+function addExperience(preset={}) {
+  const id = ++expCount;
+  const entry = {
+    id, company: preset.company||'', title: preset.title||'',
+    start: preset.start||'', end: preset.end||'',
+    desc: preset.desc||''
+  };
+  data.experience.push(entry);
+  renderExpList();
+}
+
+function renderExpList() {
+  const list = document.getElementById('exp-list');
+  list.innerHTML = '';
+  data.experience.forEach(e => {
+    const card = document.createElement('div');
+    card.className = 'section-card';
+    card.innerHTML = `
+      <div class="section-card-header" onclick="toggleCard('exp-body-${e.id}',this)">
+        <div>
+          <h4>${e.title||'New Position'}</h4>
+          <small>${e.company||'Company'} · ${e.start||'Start'} – ${e.end||'End'}</small>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <button class="remove-btn" onclick="removeExp(${e.id});event.stopPropagation();">✕ Remove</button>
+          <span class="chevron open">▾</span>
+        </div>
+      </div>
+      <div class="section-card-body" id="exp-body-${e.id}">
+        <div style="padding-top:14px;">
+          <div class="field-row" style="margin-bottom:10px;">
+            <div><label>Job Title</label><input type="text" value="${e.title}" oninput="updateExp(${e.id},'title',this.value)" /></div>
+            <div><label>Company</label><input type="text" value="${e.company}" oninput="updateExp(${e.id},'company',this.value)" /></div>
+          </div>
+          <div class="field-row" style="margin-bottom:10px;">
+            <div><label>Start Date</label><input type="text" value="${e.start}" placeholder="Jan 2022" oninput="updateExp(${e.id},'start',this.value)" /></div>
+            <div><label>End Date</label><input type="text" value="${e.end}" placeholder="Present" oninput="updateExp(${e.id},'end',this.value)" /></div>
+          </div>
+          <label>Responsibilities & Achievements</label>
+          <textarea oninput="updateExp(${e.id},'desc',this.value)" placeholder="• Led redesign of core product, increasing conversions by 32%&#10;• Managed team of 5 engineers…">${e.desc}</textarea>
+        </div>
+      </div>
+    `;
+    list.appendChild(card);
+  });
+}
+
+function updateExp(id, field, val) {
+  const e = data.experience.find(x=>x.id===id);
+  if(e){ e[field]=val; renderExpList(); renderPreview(); }
+}
+
+function removeExp(id) {
+  data.experience = data.experience.filter(x=>x.id!==id);
+  renderExpList(); renderPreview();
+}
+
+/* ═══════════════════════════════════════════════════
+   EDUCATION
+═══════════════════════════════════════════════════ */
+function addEducation(preset={}) {
+  const id = ++eduCount;
+  data.education.push({ id, school:'', degree:'', field:'', start:'', end:'', gpa:'' });
+  renderEduList();
+}
+
+function renderEduList() {
+  const list = document.getElementById('edu-list');
+  list.innerHTML = '';
+  data.education.forEach(e => {
+    const card = document.createElement('div');
+    card.className = 'section-card';
+    card.innerHTML = `
+      <div class="section-card-header" onclick="toggleCard('edu-body-${e.id}',this)">
+        <div>
+          <h4>${e.degree||'Degree'} ${e.field?'in '+e.field:''}</h4>
+          <small>${e.school||'School'} · ${e.start||''} – ${e.end||''}</small>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <button class="remove-btn" onclick="removeEdu(${e.id});event.stopPropagation();">✕ Remove</button>
+          <span class="chevron open">▾</span>
+        </div>
+      </div>
+      <div class="section-card-body" id="edu-body-${e.id}">
+        <div style="padding-top:14px;">
+          <div class="field-row" style="margin-bottom:10px;">
+            <div><label>School / University</label><input type="text" value="${e.school}" oninput="updateEdu(${e.id},'school',this.value)" /></div>
+            <div><label>Degree</label><input type="text" value="${e.degree}" placeholder="B.S., M.S., Ph.D." oninput="updateEdu(${e.id},'degree',this.value)" /></div>
+          </div>
+          <div class="field-row" style="margin-bottom:10px;">
+            <div><label>Field of Study</label><input type="text" value="${e.field}" oninput="updateEdu(${e.id},'field',this.value)" /></div>
+            <div><label>GPA (optional)</label><input type="text" value="${e.gpa}" placeholder="3.8 / 4.0" oninput="updateEdu(${e.id},'gpa',this.value)" /></div>
+          </div>
+          <div class="field-row">
+            <div><label>Start Year</label><input type="text" value="${e.start}" placeholder="2019" oninput="updateEdu(${e.id},'start',this.value)" /></div>
+            <div><label>End Year</label><input type="text" value="${e.end}" placeholder="2023" oninput="updateEdu(${e.id},'end',this.value)" /></div>
+          </div>
+        </div>
+      </div>
+    `;
+    list.appendChild(card);
+  });
+}
+
+function updateEdu(id, field, val) {
+  const e = data.education.find(x=>x.id===id);
+  if(e){ e[field]=val; renderEduList(); renderPreview(); }
+}
+
+function removeEdu(id) {
+  data.education = data.education.filter(x=>x.id!==id);
+  renderEduList(); renderPreview();
+}
+
+/* ═══════════════════════════════════════════════════
+   SKILLS & LANGUAGES
+═══════════════════════════════════════════════════ */
+function skillKeydown(e) { if(e.key==='Enter'||e.key===',') { e.preventDefault(); addSkill(); } }
+function langKeydown(e)  { if(e.key==='Enter'||e.key===',') { e.preventDefault(); addLanguage(); } }
+
+function addSkill() {
+  const inp = document.getElementById('skill-input');
+  const val = inp.value.trim().replace(/,$/, '');
+  if(!val) return;
+  data.skills.push(val); inp.value='';
+  renderSkillChips(); renderPreview();
+}
+function removeSkill(i) { data.skills.splice(i,1); renderSkillChips(); renderPreview(); }
+function renderSkillChips() {
+  const c = document.getElementById('skills-chips');
+  c.innerHTML = data.skills.map((s,i)=>
+    `<span class="chip">${s}<button onclick="removeSkill(${i})">×</button></span>`
+  ).join('');
+}
+
+function addLanguage() {
+  const inp = document.getElementById('lang-input');
+  const val = inp.value.trim();
+  if(!val) return;
+  data.languages.push(val); inp.value='';
+  renderLangChips(); renderPreview();
+}
+function removeLang(i) { data.languages.splice(i,1); renderLangChips(); renderPreview(); }
+function renderLangChips() {
+  const c = document.getElementById('lang-chips');
+  c.innerHTML = data.languages.map((l,i)=>
+    `<span class="chip" style="background:#e8f5ee;color:#1a7a4a;">${l}<button onclick="removeLang(${i})" style="color:#1a7a4a;">×</button></span>`
+  ).join('');
+}
+
+/* ═══════════════════════════════════════════════════
+   SYNC FIELDS → DATA
+═══════════════════════════════════════════════════ */
+function syncFromDom() {
+  ['firstName','lastName','jobTitle','summary','email','phone','location','website','certs']
+    .forEach(id => { const el=document.getElementById(id); if(el) data[id]=el.value; });
+}
+
+/* ═══════════════════════════════════════════════════
+   RENDER PREVIEW
+═══════════════════════════════════════════════════ */
+function renderPreview() {
+  syncFromDom();
+  const c = data.accentColor;
+  const name = [data.firstName, data.lastName].filter(Boolean).join(' ') || 'Your Name';
+
+  const contactItems = [
+    data.email    && `<span>✉ ${data.email}</span>`,
+    data.phone    && `<span>✆ ${data.phone}</span>`,
+    data.location && `<span>⌖ ${data.location}</span>`,
+    data.website  && `<span>⊕ ${data.website}</span>`
+  ].filter(Boolean).join('');
+
+  // Build experience HTML
+  const expHTML = data.experience.length ? data.experience.map(e => `
+    <div class="res-entry">
+      <div class="res-entry-top">
+        <h4>${e.title||''}</h4>
+        <span class="res-date">${e.start||''} – ${e.end||''}</span>
+      </div>
+      <div class="res-entry-sub" style="color:${c}">${e.company||''}</div>
+      <div class="res-entry-desc">${formatDesc(e.desc)}</div>
+    </div>
+  `).join('') : '<p style="font-size:12px;color:#aaa;font-style:italic;">Add work experience →</p>';
+
+  // Build education HTML
+  const eduHTML = data.education.length ? data.education.map(e => `
+    <div class="res-entry">
+      <div class="res-entry-top">
+        <h4>${[e.degree,e.field].filter(Boolean).join(' in ')}</h4>
+        <span class="res-date">${e.start||''} – ${e.end||''}</span>
+      </div>
+      <div class="res-entry-sub" style="color:${c}">${e.school||''}</div>
+      ${e.gpa ? `<div class="res-entry-desc">GPA: ${e.gpa}</div>` : ''}
+    </div>
+  `).join('') : '<p style="font-size:12px;color:#aaa;font-style:italic;">Add education →</p>';
+
+  // Skills for sidebar
+  const skillChips = data.skills.length
+    ? data.skills.map(s=>`<span class="sidebar-chip">${s}</span>`).join('')
+    : '<span style="font-size:12px;color:#aaa;">Add skills →</span>';
+
+  const langHTML = data.languages.length
+    ? data.languages.map(l=>`<span class="sidebar-chip">${l}</span>`).join('')
+    : '';
+
+  const certHTML = data.certs
+    ? `<div class="res-section"><div class="res-section-title" style="color:${c};border-color:${c}">Certifications</div>
+        <div style="font-size:11px;line-height:1.7;color:#444;">${data.certs.replace(/\n/g,'<br>')}</div></div>`
+    : '';
+
+  let html = '';
+
+  if(data.layout === 'split') {
+    html = `
+      <div class="resume-header">
+        <div class="name">${name}</div>
+        <div class="title" style="color:${c}">${data.jobTitle||'Your Professional Title'}</div>
+        <div class="resume-contact">${contactItems}</div>
+      </div>
+      <div class="resume-body">
+        <div class="resume-sidebar" style="background:#f3f2ee;">
+          <div class="res-section">
+            <div class="res-section-title" style="color:${c};border-color:${c}">Skills</div>
+            <div>${skillChips}</div>
+          </div>
+          ${data.languages.length?`
+          <div class="res-section">
+            <div class="res-section-title" style="color:${c};border-color:${c}">Languages</div>
+            <div>${langHTML}</div>
+          </div>`:''}
+          ${certHTML}
+        </div>
+        <div class="resume-main">
+          ${data.summary?`
+          <div class="res-section">
+            <div class="res-section-title" style="color:${c};border-color:${c}">Profile</div>
+            <div class="res-entry-desc" style="font-size:13px;">${data.summary}</div>
+          </div>`:''}
+          <div class="res-section">
+            <div class="res-section-title" style="color:${c};border-color:${c}">Experience</div>
+            ${expHTML}
+          </div>
+          <div class="res-section">
+            <div class="res-section-title" style="color:${c};border-color:${c}">Education</div>
+            ${eduHTML}
+          </div>
+        </div>
+      </div>
+    `;
+  } else if(data.layout === 'classic') {
+    html = `
+      <div style="padding:40px;border-bottom:2px solid ${c};text-align:center;">
+        <div style="font-family:'DM Serif Display',Georgia,serif;font-size:38px;letter-spacing:-.02em;">${name}</div>
+        <div style="font-size:13px;color:${c};font-weight:600;margin:6px 0 14px;">${data.jobTitle||''}</div>
+        <div style="font-size:11px;color:#888;font-family:'JetBrains Mono',monospace;display:flex;justify-content:center;gap:16px;flex-wrap:wrap;">${contactItems}</div>
+      </div>
+      <div style="padding:32px 40px;">
+        ${data.summary?`<div class="res-section"><div class="res-section-title" style="color:${c};border-color:${c}">Summary</div><div class="res-entry-desc">${data.summary}</div></div>`:''}
+        <div class="res-section"><div class="res-section-title" style="color:${c};border-color:${c}">Work Experience</div>${expHTML}</div>
+        <div class="res-section"><div class="res-section-title" style="color:${c};border-color:${c}">Education</div>${eduHTML}</div>
+        ${data.skills.length?`<div class="res-section"><div class="res-section-title" style="color:${c};border-color:${c}">Skills</div><div>${skillChips}</div></div>`:''}
+      </div>
+    `;
+  } else if(data.layout === 'minimal') {
+    html = `
+      <div style="padding:44px 48px 24px;border-left:4px solid ${c};">
+        <div style="font-family:'DM Serif Display',Georgia,serif;font-size:40px;">${name}</div>
+        <div style="font-size:13px;color:${c};font-weight:500;margin:4px 0 12px;">${data.jobTitle||''}</div>
+        <div style="font-size:11px;color:#888;font-family:'JetBrains Mono',monospace;display:flex;gap:14px;flex-wrap:wrap;">${contactItems}</div>
+      </div>
+      <div style="padding:28px 48px;">
+        ${data.summary?`<div class="res-section"><div class="res-section-title" style="color:${c};border-color:${c}">About</div><div class="res-entry-desc">${data.summary}</div></div>`:''}
+        <div class="res-section"><div class="res-section-title" style="color:${c};border-color:${c}">Experience</div>${expHTML}</div>
+        <div class="res-section"><div class="res-section-title" style="color:${c};border-color:${c}">Education</div>${eduHTML}</div>
+        ${data.skills.length?`<div class="res-section"><div class="res-section-title" style="color:${c};border-color:${c}">Skills</div><div>${skillChips}</div></div>`:''}
+        ${data.languages.length?`<div class="res-section"><div class="res-section-title" style="color:${c};border-color:${c}">Languages</div><div>${langHTML}</div></div>`:''}
+      </div>
+    `;
+  } else { // modern
+    html = `
+      <div style="background:${c};padding:36px 40px 28px;color:white;">
+        <div style="font-family:'DM Serif Display',Georgia,serif;font-size:38px;letter-spacing:-.02em;">${name}</div>
+        <div style="font-size:14px;opacity:.85;margin:6px 0 16px;">${data.jobTitle||''}</div>
+        <div style="font-size:11px;opacity:.7;font-family:'JetBrains Mono',monospace;display:flex;gap:16px;flex-wrap:wrap;">${contactItems}</div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 2fr;">
+        <div style="background:#f0f0ec;padding:28px 22px;border-right:1px solid #ddd;">
+          ${data.summary?`<div class="res-section"><div class="res-section-title" style="color:${c};border-color:${c}">Profile</div><div class="res-entry-desc" style="font-size:12px;">${data.summary}</div></div>`:''}
+          ${data.skills.length?`<div class="res-section"><div class="res-section-title" style="color:${c};border-color:${c}">Skills</div><div>${skillChips}</div></div>`:''}
+          ${data.languages.length?`<div class="res-section"><div class="res-section-title" style="color:${c};border-color:${c}">Languages</div><div>${langHTML}</div></div>`:''}
+        </div>
+        <div style="padding:28px 32px;">
+          <div class="res-section"><div class="res-section-title" style="color:${c};border-color:${c}">Experience</div>${expHTML}</div>
+          <div class="res-section"><div class="res-section-title" style="color:${c};border-color:${c}">Education</div>${eduHTML}</div>
+        </div>
+      </div>
+    `;
+  }
+
+  document.getElementById('resume-preview').innerHTML = html;
+}
+
+function formatDesc(txt) {
+  if(!txt) return '';
+  const lines = txt.split('\n').filter(l=>l.trim());
+  if(lines.length === 0) return '';
+  const isBullets = lines.some(l=>l.trim().startsWith('•')||l.trim().startsWith('-'));
+  if(isBullets) {
+    return '<ul>' + lines.map(l=>`<li>${l.replace(/^[•\-]\s*/,'')}</li>`).join('') + '</ul>';
+  }
+  return lines.join('<br>');
+}
+
+/* ═══════════════════════════════════════════════════
+   LAYOUT & COLOR
+═══════════════════════════════════════════════════ */
+function setLayout(name, btn) {
+  data.layout = name;
+  document.querySelectorAll('.template-pill').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  renderPreview();
+}
+
+function applyColorScheme() {
+  const v = document.getElementById('color-scheme').value;
+  data.accentColor = colorSchemes[v] || '#2350ff';
+  renderPreview();
+}
+
+/* ═══════════════════════════════════════════════════
+   CARD TOGGLE
+═══════════════════════════════════════════════════ */
+function toggleCard(bodyId, header) {
+  const body = document.getElementById(bodyId);
+  const chev = header.querySelector('.chevron');
+  if(!body) return;
+  const open = !body.classList.contains('collapsed');
+  body.classList.toggle('collapsed', open);
+  chev && chev.classList.toggle('open', !open);
+}
+
+/* ═══════════════════════════════════════════════════
+   AI ASSISTANT
+═══════════════════════════════════════════════════ */
+function setAIPrompt(text) {
+  document.getElementById('ai-prompt').value = text;
+}
+
+async function runAI() {
+  const prompt = document.getElementById('ai-prompt').value.trim();
+  if(!prompt) { toast('Please enter a prompt first.', 'error'); return; }
+
+  const btn = document.getElementById('ai-btn');
+  const status = document.getElementById('ai-status');
+  btn.innerHTML = '<span class="spinner"></span> Generating…';
+  btn.disabled = true;
+  status.textContent = '';
+
+  // Build context from current resume data
+  syncFromDom();
+  const context = `
+Current resume data:
+- Name: ${data.firstName} ${data.lastName}
+- Title: ${data.jobTitle}
+- Summary: ${data.summary}
+- Experience: ${data.experience.map(e=>`${e.title} at ${e.company}`).join(', ')}
+- Skills: ${data.skills.join(', ')}
+  `.trim();
+
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 1000,
+        system: `You are a professional resume writing expert and career coach. 
+Help users create compelling, ATS-optimized resume content. 
+Be concise, professional, and results-focused. 
+Use action verbs and quantify achievements where possible.
+Context about the user's resume: ${context}`,
+        messages: [{ role: 'user', content: prompt }]
+      })
+    });
+
+    const d = await res.json();
+    const text = d.content?.map(b=>b.text||'').join('') || 'No response received.';
+
+    document.getElementById('ai-output-text').textContent = text;
+    document.getElementById('ai-output').style.display = 'block';
+    status.textContent = '✓ Done';
+    toast('AI content generated!', 'success');
+  } catch(err) {
+    toast('AI error: ' + err.message, 'error');
+    status.textContent = 'Error';
+  } finally {
+    btn.innerHTML = '✦ Generate';
+    btn.disabled = false;
+  }
+}
+
+function applyAIToSummary() {
+  const text = document.getElementById('ai-output-text').textContent;
+  document.getElementById('summary').value = text.trim().substring(0,600);
+  syncFromDom();
+  renderPreview();
+  toast('Applied to summary!', 'success');
+  switchTab('info');
+}
+
+function copyAIText() {
+  const text = document.getElementById('ai-output-text').textContent;
+  navigator.clipboard.writeText(text).then(()=>toast('Copied!','success'));
+}
+
+/* ═══════════════════════════════════════════════════
+   PDF DOWNLOAD
+═══════════════════════════════════════════════════ */
+async function downloadPDF() {
+  const btn = document.getElementById('download-btn');
+  btn.innerHTML = '<span class="spinner"></span> Generating…';
+  btn.disabled = true;
+
+  try {
+    const el = document.getElementById('resume-preview');
+    const canvas = await html2canvas(el, {
+      scale: 2,
+      useCORS: true,
+      backgroundColor: '#ffffff',
+      logging: false
+    });
+
+    const { jsPDF } = window.jspdf;
+    const pdf = new jsPDF({ orientation:'portrait', unit:'mm', format:'a4' });
+
+    const pdfW = pdf.internal.pageSize.getWidth();
+    const pdfH = pdf.internal.pageSize.getHeight();
+    const imgRatio = canvas.height / canvas.width;
+    const imgW = pdfW;
+    const imgH = imgW * imgRatio;
+
+    const img = canvas.toDataURL('image/jpeg', 0.95);
+
+    if(imgH <= pdfH) {
+      pdf.addImage(img, 'JPEG', 0, 0, imgW, imgH);
+    } else {
+      // Multi-page
+      let pos = 0;
+      let remaining = imgH;
+      while(remaining > 0) {
+        pdf.addImage(img, 'JPEG', 0, pos, imgW, imgH);
+        remaining -= pdfH;
+        pos -= pdfH;
+        if(remaining > 0) pdf.addPage();
+      }
+    }
+
+    const name = [data.firstName, data.lastName].filter(Boolean).join('_') || 'Resume';
+    pdf.save(`${name}_Resume.pdf`);
+    toast('PDF downloaded!', 'success');
+  } catch(err) {
+    toast('PDF error: ' + err.message, 'error');
+  } finally {
+    btn.innerHTML = '⬇ Download PDF';
+    btn.disabled = false;
+  }
+}
+
+/* ═══════════════════════════════════════════════════
+   UTILS
+═══════════════════════════════════════════════════ */
+function toast(msg, type='') {
+  const c = document.getElementById('toast-container');
+  const t = document.createElement('div');
+  t.className = 'toast' + (type?' '+type:'');
+  const icons = { success:'✓', error:'✕', '':'ℹ' };
+  t.innerHTML = `<span>${icons[type]||'ℹ'}</span> ${msg}`;
+  c.appendChild(t);
+  setTimeout(()=>t.remove(), 3500);
+}
+
+function clearAll() {
+  if(!confirm('Reset all resume data?')) return;
+  data = { firstName:'',lastName:'',jobTitle:'',summary:'',email:'',phone:'',location:'',website:'',experience:[],education:[],skills:[],languages:[],certs:'',layout:'split',accentColor:'#2350ff' };
+  expCount = 0; eduCount = 0;
+  ['firstName','lastName','jobTitle','summary','email','phone','location','website','certs']
+    .forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
+  renderExpList(); renderEduList(); renderSkillChips(); renderLangChips(); renderPreview();
+  toast('Reset complete');
+}
+
+function toggleMobilePreview() {
+  const p = document.getElementById('preview-panel');
+  p.classList.toggle('show-mobile');
+}
+
+/* ═══════════════════════════════════════════════════
+   INIT — seed demo data
+═══════════════════════════════════════════════════ */
+window.addEventListener('DOMContentLoaded', () => {
+  // Pre-fill demo
+  const demo = {
+    firstName:'Alex', lastName:'Rivera',
+    jobTitle:'Senior Product Designer',
+    summary:'Product designer with 7+ years crafting user-centered digital experiences for SaaS and consumer products. Proven track record of increasing conversion by up to 40% through data-driven design decisions. Passionate about accessibility and design systems.',
+    email:'alex.rivera@email.com',
+    phone:'+1 415 555 0192',
+    location:'San Francisco, CA',
+    website:'linkedin.com/in/alexrivera'
+  };
+  Object.entries(demo).forEach(([k,v])=>{
+    data[k]=v;
+    const el=document.getElementById(k); if(el) el.value=v;
+  });
+
+  addExperience({ company:'Figma Inc.', title:'Senior Product Designer', start:'Mar 2022', end:'Present',
+    desc:`• Led redesign of the Figma prototyping tool, improving task completion by 38%\n• Defined design system used by 200+ designers across 14 teams\n• Collaborated with engineering to ship 6 major features ahead of schedule` });
+  addExperience({ company:'Airbnb', title:'Product Designer', start:'Jun 2019', end:'Feb 2022',
+    desc:`• Owned end-to-end design for the host onboarding experience (4M users/yr)\n• Conducted 80+ user interviews and usability sessions\n• Reduced host setup time by 24% through iterative improvements` });
+
+  addEducation();
+  const e = data.education[0];
+  e.school='UC Berkeley'; e.degree='B.A.'; e.field='Cognitive Science'; e.start='2015'; e.end='2019'; e.gpa='3.7';
+  renderEduList();
+
+  ['Figma','Design Systems','Prototyping','User Research','Accessibility','Notion','Jira','HTML / CSS'].forEach(s=>data.skills.push(s));
+  ['English (Native)','Spanish (Professional)'].forEach(l=>data.languages.push(l));
+  renderSkillChips(); renderLangChips();
+
+  document.getElementById('certs').value = 'Google UX Design Certificate (2023)\nNielsen Norman UX Certified (2022)';
+  syncFromDom();
+
+  renderPreview();
+});
+</script>
+</body>
+</html>
